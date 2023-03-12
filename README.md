@@ -84,7 +84,10 @@ Download `nerf_llff_data.zip` from [here](https://drive.google.com/drive/folders
 
 Run (example)
 ```
-python train.py --dataset_name llff --root_dir ./nerf_llff_data/fern --N_importance 64 --img_wh 504 378 --num_epochs 30 --batch_size 1024  --decay_step 10 20 --decay_gamma 0.5 --exp_name fern
+python train.py --dataset_name llff --root_dir ./nerf_llff_data/fern --N_importance 64 --img_wh 504 378 --num_epochs 30 --batch_size 1024 --decay_step 10 20 --decay_gamma 0.5 --exp_name fern
+```
+```
+python train.py --dataset_name llff --root_dir ./haibao --N_importance 64 --img_wh 1008 756 --num_epochs 10 --batch_size 1024 --decay_step 10 20 --decay_gamma 0.5 --exp_name haibao
 ```
 
 These parameters are chosen to best mimic the training settings in the original repo. See [opt.py](opt.py) for all configurations.
