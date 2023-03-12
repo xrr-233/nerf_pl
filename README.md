@@ -61,14 +61,8 @@ Download `nerf_synthetic.zip` from [here](https://drive.google.com/drive/folders
 
 Run (example)
 ```
-python train.py \
-   --dataset_name blender \
-   --root_dir $BLENDER_DIR \
-   --N_importance 64 --img_wh 400 400 --noise_std 0 \
-   --num_epochs 16 --batch_size 1024 \
-   --optimizer adam --lr 5e-4 \
-   --lr_scheduler steplr --decay_step 2 4 8 --decay_gamma 0.5 \
-   --exp_name exp
+python train.py --dataset_name blender --root_dir ./nerf_synthetic/drums  --N_importance 64 --img_wh 400 400 --noise_std 0 --num_epochs 16 --batch_size 1024 --decay_step 2 4 8 --decay_g
+amma 0.5 --exp_name drums
 ```
 
 These parameters are chosen to best mimic the training settings in the original repo. See [opt.py](opt.py) for all configurations.
@@ -138,10 +132,7 @@ See [test.ipynb](test.ipynb) for a simple view synthesis and depth prediction on
 Use [eval.py](eval.py) to create the whole sequence of moving views.
 E.g.
 ```
-python eval.py \
-   --root_dir $BLENDER \
-   --dataset_name blender --scene_name lego \
-   --img_wh 400 400 --N_importance 64 --ckpt_path $CKPT_PATH
+python eval.py --root_dir ./nerf_synthetic/drums --dataset_name blender --scene_name drums --img_wh 400 400 --N_importance 64 --ckpt_path ./ckpts/drums/epoch=3.ckpt
 ```
 **IMPORTANT** : Don't forget to add `--spheric_poses` if the model is trained under `--spheric` setting!
 
@@ -175,6 +166,9 @@ If you trained some interesting scenes, you are also welcomed to share the model
 # :ribbon: Mesh
 
 See [README_mesh](README_mesh.md) for reconstruction of **colored** mesh. Only supported for blender dataset and 360 inward-facing data!
+```
+python extract_color_mesh.py --root_dir ./nerf_synthetic/drums --dataset_name blender --scene_name drums --img_wh 400 400 --ckpt_path ckpts/drums/epoch=3.ckpt
+```
 
 # :warning: Notes on differences with the original repo
 
