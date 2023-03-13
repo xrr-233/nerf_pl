@@ -1,4 +1,5 @@
 import cv2
+import open3d
 import torch
 from torch.utils.data import Dataset
 import glob
@@ -173,8 +174,8 @@ class LLFFDataset(Dataset):
         self.val_num = max(1, val_num) # at least 1
         self.define_transforms()
 
-        self.read_meta()
-        self.read_meta_neus(os.path.join(self.root_dir, 'preprocessed'))
+        # self.read_meta()
+        self.read_meta_neus(os.path.join('BlendedMVS_preprocessed', '5a7d3db14989e929563eb153'))
         self.white_back = False
 
     def load_K_Rt_from_P(self, filename, P=None):
@@ -348,27 +349,30 @@ class LLFFDataset(Dataset):
 
         poses = np.concatenate(camera_extrinsics).reshape((n_images, 4, 4))[:, :3] # (N_images, 3, 4) cam2world matrices
         
-        # read bounds
+        # read bounds 让visibility全部为1！
         self.bounds = np.zeros((len(poses), 2)) # (N_images, 2)
-        pts3d = read_points3d_binary(os.path.join(self.root_dir, 'sparse/0/points3D.bin'))
-        pts_world = np.zeros((1, 3, len(pts3d))) # (1, 3, N_points)
-        visibilities = np.zeros((len(poses), len(pts3d))) # (N_images, N_points)
-        for i, k in enumerate(pts3d):
-            pts_world[0, :, i] = pts3d[k].xyz
-            for j in pts3d[k].image_ids:
-                visibilities[j-1, i] = 1
+        meshes = []
+        if os.path.exists(os.path.join(temp, 'textured_mesh.ply')):
+            meshes.append(open3d.io.read_triangle_mesh(os.path.join(temp, 'textured_mesh.ply'), True))
+        elif os.path.exists(os.path.join(temp, 'textured_mesh')):
+            for file in os.listdir(os.path.join(temp, 'textured_mesh')):
+                if file.endswith('.obj'):
+                    meshes.append(open3d.io.read_triangle_mesh(os.path.join(temp, 'textured_mesh', file), True))
+        pts3d = []
+        for mesh in meshes:
+            pts3d.append(np.asarray(mesh.vertices, dtype=np.float32))
+        pts3d = np.concatenate(pts3d, axis=0)
+        pts_world = pts3d.reshape((1, 3, pts3d.shape[0])) # (1, 3, N_points)
+        visibilities = np.ones((len(poses), len(pts3d))) # (N_images, N_points)
         # calculate each point's depth w.r.t. each camera
         # it's the dot product of "points - camera center" and "camera frontal axis"
         depths = ((pts_world-poses[..., 3:4])*poses[..., 2:3]).sum(1) # (N_images, N_points)
         for i in range(len(poses)):
             visibility_i = visibilities[i]
-            print(visibility_i.shape)
             zs = depths[i][visibility_i==1]
             self.bounds[i] = [np.percentile(zs, 0.1), np.percentile(zs, 99.9)]
-            print(zs.shape)
         # permute the matrices to increasing order
         poses = poses[perm]
-        print(self.bounds)
         self.bounds = self.bounds[perm]
         
         # COLMAP poses has rotation in form "right down front", change to "right up back"
