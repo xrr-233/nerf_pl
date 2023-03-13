@@ -84,11 +84,9 @@ Download `nerf_llff_data.zip` from [here](https://drive.google.com/drive/folders
 
 Run (example)
 ```
-python train.py --dataset_name llff --root_dir ./nerf_llff_data/fern --N_importance 64 --img_wh 504 378 --num_epochs 30 --batch_size 1024 --decay_step 10 20 --decay_gamma 0.5 --exp_name fern
+python train.py --dataset_name llff --root_dir ./BlendedMVS_preprocessed/5a7d3db14989e929563eb153 --N_importance 64 --img_wh 768 576 --num_epochs 10 --batch_size 1024 --decay_step 10 20 --decay_gamma 0.5 --exp_name ding --spheric_poses
 ```
-```
-python train.py --dataset_name llff --root_dir ./haibao --N_importance 64 --img_wh 1008 756 --num_epochs 10 --batch_size 1024 --decay_step 10 20 --decay_gamma 0.5 --exp_name haibao
-```
+Train PSNR=26 Val PSNR=18.4
 
 These parameters are chosen to best mimic the training settings in the original repo. See [opt.py](opt.py) for all configurations.
 
@@ -128,10 +126,7 @@ See [test.ipynb](test.ipynb) for a simple view synthesis and depth prediction on
 Use [eval.py](eval.py) to create the whole sequence of moving views.
 E.g.
 ```
-python eval.py --root_dir ./nerf_synthetic/drums --dataset_name blender --scene_name drums --img_wh 400 400 --N_importance 64 --ckpt_path ./ckpts/drums/epoch=3.ckpt
-```
-```
-python eval.py --root_dir ./nerf_llff_data/fern --dataset_name llff --scene_name fern --img_wh 504 378 --N_importance 64 --ckpt_path ./ckpts/fern/epoch=29.ckpt
+python eval.py --root_dir ./BlendedMVS_preprocessed/5a7d3db14989e929563eb153 --dataset_name llff --scene_name ding --img_wh 768 576 --N_importance 64 --ckpt_path ./ckpts/ding/epoch=9.ckpt --spheric_poses
 ```
 **IMPORTANT** : Don't forget to add `--spheric_poses` if the model is trained under `--spheric` setting!
 
@@ -166,10 +161,7 @@ If you trained some interesting scenes, you are also welcomed to share the model
 
 See [README_mesh](README_mesh.md) for reconstruction of **colored** mesh. Only supported for blender dataset and 360 inward-facing data!
 ```
-python extract_color_mesh.py --root_dir ./nerf_synthetic/drums --dataset_name blender --scene_name drums --img_wh 400 400 --ckpt_path ckpts/drums/epoch=3.ckpt
-```
-```
-python extract_color_mesh.py --root_dir ./nerf_llff_data/fern --dataset_name llff --scene_name fern --img_wh 504 378 --ckpt_path ./ckpts/fern/epoch=29.ckpt
+python extract_color_mesh.py --root_dir ./BlendedMVS_preprocessed/5a7d3db14989e929563eb153 --dataset_name llff --scene_name ding --img_wh 768 576 --ckpt_path ./ckpts/ding/epoch=9.ckpt
 ```
 
 # :warning: Notes on differences with the original repo

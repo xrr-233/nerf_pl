@@ -175,7 +175,7 @@ class LLFFDataset(Dataset):
         self.define_transforms()
 
         # self.read_meta()
-        self.read_meta_neus(os.path.join('BlendedMVS_preprocessed', '5a7d3db14989e929563eb153'))
+        self.read_meta_neus()
         self.white_back = False
 
     def load_K_Rt_from_P(self, filename, P=None):
@@ -320,9 +320,9 @@ class LLFFDataset(Dataset):
                 radius = 1.1 * self.bounds.min()
                 self.poses_test = create_spheric_poses(radius)
 
-    def read_meta_neus(self, temp):
+    def read_meta_neus(self):
         # Step 1: rescale focal length according to training resolution
-        camera_dict = np.load(os.path.join(temp, 'cameras_sphere.npz'))
+        camera_dict = np.load(os.path.join(self.root_dir, 'cameras_sphere.npz'))
         n_images = len(camera_dict) // 6
         world_mats_np = [camera_dict['world_mat_%d' % idx].astype(np.float32) for idx in range(n_images)]
         scale_mats_np = [camera_dict['scale_mat_%d' % idx].astype(np.float32) for idx in range(n_images)]
@@ -338,10 +338,10 @@ class LLFFDataset(Dataset):
 
         # Step 2: correct poses
         # read extrinsics (of successfully reconstructed images)
-        perm = np.argsort(os.listdir(os.path.join(temp, 'image')))
+        perm = np.argsort(os.listdir(os.path.join(self.root_dir, 'image')))
         # read successfully reconstructed images and ignore others
-        self.image_paths = [os.path.join(temp, 'image', name)
-                            for name in sorted(os.listdir(os.path.join(temp, 'image')))]
+        self.image_paths = [os.path.join(self.root_dir, 'image', name)
+                            for name in sorted(os.listdir(os.path.join(self.root_dir, 'image')))]
         sample_img = Image.open(self.image_paths[0])
         W = sample_img.width
         H = sample_img.height
@@ -352,12 +352,12 @@ class LLFFDataset(Dataset):
         # read bounds 让visibility全部为1！
         self.bounds = np.zeros((len(poses), 2)) # (N_images, 2)
         meshes = []
-        if os.path.exists(os.path.join(temp, 'textured_mesh.ply')):
-            meshes.append(open3d.io.read_triangle_mesh(os.path.join(temp, 'textured_mesh.ply'), True))
-        elif os.path.exists(os.path.join(temp, 'textured_mesh')):
-            for file in os.listdir(os.path.join(temp, 'textured_mesh')):
+        if os.path.exists(os.path.join(self.root_dir, 'textured_mesh.ply')):
+            meshes.append(open3d.io.read_triangle_mesh(os.path.join(self.root_dir, 'textured_mesh.ply'), True))
+        elif os.path.exists(os.path.join(self.root_dir, 'textured_mesh')):
+            for file in os.listdir(os.path.join(self.root_dir, 'textured_mesh')):
                 if file.endswith('.obj'):
-                    meshes.append(open3d.io.read_triangle_mesh(os.path.join(temp, 'textured_mesh', file), True))
+                    meshes.append(open3d.io.read_triangle_mesh(os.path.join(self.root_dir, 'textured_mesh', file), True))
         pts3d = []
         for mesh in meshes:
             pts3d.append(np.asarray(mesh.vertices, dtype=np.float32))
