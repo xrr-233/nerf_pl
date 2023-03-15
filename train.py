@@ -179,5 +179,7 @@ def main(hparams):
 
 
 if __name__ == '__main__':
+    import warnings
+    warnings.filterwarnings("ignore", category=DeprecationWarning)
     hparams = get_opts()
     main(hparams)

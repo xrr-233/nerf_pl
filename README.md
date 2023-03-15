@@ -86,7 +86,6 @@ Run (example)
 ```
 python train.py --dataset_name llff --root_dir ./BlendedMVS_preprocessed/5a7d3db14989e929563eb153 --N_importance 64 --img_wh 768 576 --num_epochs 10 --batch_size 1024 --decay_step 10 20 --decay_gamma 0.5 --exp_name ding --spheric_poses
 ```
-Train PSNR=26 Val PSNR=18.4
 
 These parameters are chosen to best mimic the training settings in the original repo. See [opt.py](opt.py) for all configurations.
 
