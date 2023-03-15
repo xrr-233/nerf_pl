@@ -15,7 +15,7 @@ from .colmap_utils import \
 
 def normalize(v):
     """Normalize a vector."""
-    return v/np.linalg.norm(v)
+    return v / np.linalg.norm(v)
 
 
 def average_poses(poses):
@@ -27,7 +27,7 @@ def average_poses(poses):
     3. Compute axis y': the average y axis.
     4. Compute x' = y' cross product z, then normalize it as the x axis.
     5. Compute the y axis: z cross product x.
-    
+
     Note that at step 3, we cannot directly use y' as y axis since it's
     not necessarily orthogonal to z axis. We need to pass from x to y.
 
@@ -38,21 +38,21 @@ def average_poses(poses):
         pose_avg: (3, 4) the average pose
     """
     # 1. Compute the center
-    center = poses[..., 3].mean(0) # (3)
+    center = poses[..., 3].mean(0)  # (3)
 
     # 2. Compute the z axis
-    z = normalize(poses[..., 2].mean(0)) # (3)
+    z = normalize(poses[..., 2].mean(0))  # (3)
 
     # 3. Compute axis y' (no need to normalize as it's not the final output)
-    y_ = poses[..., 1].mean(0) # (3)
+    y_ = poses[..., 1].mean(0)  # (3)
 
     # 4. Compute the x axis
-    x = normalize(np.cross(y_, z)) # (3)
+    x = normalize(np.cross(y_, z))  # (3)
 
     # 5. Compute the y axis (as z and x are normalized, y is already of norm 1)
-    y = np.cross(z, x) # (3)
+    y = np.cross(z, x)  # (3)
 
-    pose_avg = np.stack([x, y, z, center], 1) # (3, 4)
+    pose_avg = np.stack([x, y, z, center], 1)  # (3, 4)
 
     return pose_avg
 
@@ -70,16 +70,16 @@ def center_poses(poses):
         pose_avg: (3, 4) the average pose
     """
 
-    pose_avg = average_poses(poses) # (3, 4)
+    pose_avg = average_poses(poses)  # (3, 4)
     pose_avg_homo = np.eye(4)
-    pose_avg_homo[:3] = pose_avg # convert to homogeneous coordinate for faster computation
-                                 # by simply adding 0, 0, 0, 1 as the last row
-    last_row = np.tile(np.array([0, 0, 0, 1]), (len(poses), 1, 1)) # (N_images, 1, 4)
+    pose_avg_homo[:3] = pose_avg  # convert to homogeneous coordinate for faster computation
+    # by simply adding 0, 0, 0, 1 as the last row
+    last_row = np.tile(np.array([0, 0, 0, 1]), (len(poses), 1, 1))  # (N_images, 1, 4)
     poses_homo = \
-        np.concatenate([poses, last_row], 1) # (N_images, 4, 4) homogeneous coordinate
+        np.concatenate([poses, last_row], 1)  # (N_images, 4, 4) homogeneous coordinate
 
-    poses_centered = np.linalg.inv(pose_avg_homo) @ poses_homo # (N_images, 4, 4)
-    poses_centered = poses_centered[:, :3] # (N_images, 3, 4)
+    poses_centered = np.linalg.inv(pose_avg_homo) @ poses_homo  # (N_images, 4, 4)
+    poses_centered = poses_centered[:, :3]  # (N_images, 3, 4)
 
     return poses_centered, pose_avg
 
@@ -101,22 +101,22 @@ def create_spiral_poses(radii, focus_depth, n_poses=120):
     """
 
     poses_spiral = []
-    for t in np.linspace(0, 4*np.pi, n_poses+1)[:-1]: # rotate 4pi (2 rounds)
+    for t in np.linspace(0, 4 * np.pi, n_poses + 1)[:-1]:  # rotate 4pi (2 rounds)
         # the parametric function of the spiral (see the interactive web)
-        center = np.array([np.cos(t), -np.sin(t), -np.sin(0.5*t)]) * radii
+        center = np.array([np.cos(t), -np.sin(t), -np.sin(0.5 * t)]) * radii
 
         # the viewing z axis is the vector pointing from the @focus_depth plane
         # to @center
         z = normalize(center - np.array([0, 0, -focus_depth]))
-        
+
         # compute other axes as in @average_poses
-        y_ = np.array([0, 1, 0]) # (3)
-        x = normalize(np.cross(y_, z)) # (3)
-        y = np.cross(z, x) # (3)
+        y_ = np.array([0, 1, 0])  # (3)
+        x = normalize(np.cross(y_, z))  # (3)
+        y = np.cross(z, x)  # (3)
 
-        poses_spiral += [np.stack([x, y, z, center], 1)] # (3, 4)
+        poses_spiral += [np.stack([x, y, z, center], 1)]  # (3, 4)
 
-    return np.stack(poses_spiral, 0) # (n_poses, 3, 4)
+    return np.stack(poses_spiral, 0)  # (n_poses, 3, 4)
 
 
 def create_spheric_poses(radius, n_poses=120):
@@ -128,35 +128,36 @@ def create_spheric_poses(radius, n_poses=120):
     Outputs:
         spheric_poses: (n_poses, 3, 4) the poses in the circular path
     """
+
     def spheric_pose(theta, phi, radius):
-        trans_t = lambda t : np.array([
-            [1,0,0,0],
-            [0,1,0,-0.9*t],
-            [0,0,1,t],
-            [0,0,0,1],
+        trans_t = lambda t: np.array([
+            [1, 0, 0, 0],
+            [0, 1, 0, -0.9 * t],
+            [0, 0, 1, t],
+            [0, 0, 0, 1],
         ])
 
-        rot_phi = lambda phi : np.array([
-            [1,0,0,0],
-            [0,np.cos(phi),-np.sin(phi),0],
-            [0,np.sin(phi), np.cos(phi),0],
-            [0,0,0,1],
+        rot_phi = lambda phi: np.array([
+            [1, 0, 0, 0],
+            [0, np.cos(phi), -np.sin(phi), 0],
+            [0, np.sin(phi), np.cos(phi), 0],
+            [0, 0, 0, 1],
         ])
 
-        rot_theta = lambda th : np.array([
-            [np.cos(th),0,-np.sin(th),0],
-            [0,1,0,0],
-            [np.sin(th),0, np.cos(th),0],
-            [0,0,0,1],
+        rot_theta = lambda th: np.array([
+            [np.cos(th), 0, -np.sin(th), 0],
+            [0, 1, 0, 0],
+            [np.sin(th), 0, np.cos(th), 0],
+            [0, 0, 0, 1],
         ])
 
         c2w = rot_theta(theta) @ rot_phi(phi) @ trans_t(radius)
-        c2w = np.array([[-1,0,0,0],[0,0,1,0],[0,1,0,0],[0,0,0,1]]) @ c2w
+        c2w = np.array([[-1, 0, 0, 0], [0, 0, 1, 0], [0, 1, 0, 0], [0, 0, 0, 1]]) @ c2w
         return c2w[:3]
 
     spheric_poses = []
-    for th in np.linspace(0, 2*np.pi, n_poses+1)[:-1]:
-        spheric_poses += [spheric_pose(th, -np.pi/5, radius)] # 36 degree view downwards
+    for th in np.linspace(0, 2 * np.pi, n_poses + 1)[:-1]:
+        spheric_poses += [spheric_pose(th, -np.pi / 5, radius)]  # 36 degree view downwards
     return np.stack(spheric_poses, 0)
 
 
@@ -171,12 +172,12 @@ class LLFFDataset(Dataset):
         self.split = split
         self.img_wh = img_wh
         self.spheric_poses = spheric_poses
-        self.val_num = max(1, val_num) # at least 1
+        self.val_num = max(1, val_num)  # at least 1
         self.define_transforms()
 
-        # self.read_meta()
+        self.read_meta()
         self.read_meta_test()
-        self.read_meta_neus()
+        # self.read_meta_neus()
         self.white_back = False
 
     def load_K_Rt_from_P(self, filename, P=None):
@@ -323,7 +324,7 @@ class LLFFDataset(Dataset):
                 radius = 1.1 * self.bounds.min()
                 self.poses_test = create_spheric_poses(radius)
 
-    def read_meta_test(self):
+    def read_meta_neus(self):
         # Step 1: rescale focal length according to training resolution
         camera_dict = np.load(os.path.join(self.root_dir, 'cameras_sphere.npz'))
         n_images = len(camera_dict) // 6
@@ -350,7 +351,24 @@ class LLFFDataset(Dataset):
         H = sample_img.height
         self.focal = camera_intrinsics[0][0, 0] * self.img_wh[0] / W
 
-        poses = np.concatenate(camera_extrinsics).reshape((n_images, 4, 4))[:, :3]  # (N_images, 3, 4) cam2world matrices
+        poses = np.concatenate(camera_extrinsics).reshape((n_images, 4, 4))[:,
+                :3]  # (N_images, 3, 4) cam2world matrices
+
+        # # read bounds 让visibility全部为1！
+        # self.bounds = np.zeros((len(poses), 2)) # (N_images, 2)
+        # meshes = []
+        # if os.path.exists(os.path.join(self.root_dir, 'textured_mesh.ply')):
+        #     meshes.append(open3d.io.read_triangle_mesh(os.path.join(self.root_dir, 'textured_mesh.ply'), True))
+        # elif os.path.exists(os.path.join(self.root_dir, 'textured_mesh')):
+        #     for file in os.listdir(os.path.join(self.root_dir, 'textured_mesh')):
+        #         if file.endswith('.obj'):
+        #             meshes.append(open3d.io.read_triangle_mesh(os.path.join(self.root_dir, 'textured_mesh', file), True))
+        # pts3d = []
+        # for mesh in meshes:
+        #     pts3d.append(np.asarray(mesh.vertices, dtype=np.float32))
+        # pts3d = np.concatenate(pts3d, axis=0)
+        # pts_world = pts3d.reshape((1, 3, pts3d.shape[0])) # (1, 3, N_points)
+        # visibilities = np.ones((len(poses), len(pts3d))) # (N_images, N_points)
 
         # read bounds
         self.bounds = np.zeros((len(poses), 2))  # (N_images, 2)
@@ -361,6 +379,7 @@ class LLFFDataset(Dataset):
             pts_world[0, :, i] = pts3d[k].xyz
             for j in pts3d[k].image_ids:
                 visibilities[j - 1, i] = 1
+
         # calculate each point's depth w.r.t. each camera
         # it's the dot product of "points - camera center" and "camera frontal axis"
         depths = ((pts_world - poses[..., 3:4]) * poses[..., 2:3]).sum(1)  # (N_images, N_points)
@@ -449,158 +468,6 @@ class LLFFDataset(Dataset):
                 radius = 1.1 * self.bounds.min()
                 self.poses_test = create_spheric_poses(radius)
 
-    def read_meta_neus(self):
-        # Step 1: rescale focal length according to training resolution
-        camera_dict = np.load(os.path.join(self.root_dir, 'cameras_sphere.npz'))
-        n_images = len(camera_dict) // 6
-        world_mats_np = [camera_dict['world_mat_%d' % idx].astype(np.float32) for idx in range(n_images)]
-        scale_mats_np = [camera_dict['scale_mat_%d' % idx].astype(np.float32) for idx in range(n_images)]
-
-        camera_intrinsics = []
-        camera_extrinsics = []
-        for scale_mat, world_mat in zip(scale_mats_np, world_mats_np):
-            P = world_mat
-            P = P[:3, :4]
-            intrinsics, pose = self.load_K_Rt_from_P(None, P)
-            camera_intrinsics.append(intrinsics[:3, :3])
-            camera_extrinsics.append(pose)
-
-        # Step 2: correct poses
-        # read extrinsics (of successfully reconstructed images)
-        perm = np.argsort(os.listdir(os.path.join(self.root_dir, 'image')))
-        # read successfully reconstructed images and ignore others
-        self.image_paths = [os.path.join(self.root_dir, 'image', name)
-                            for name in sorted(os.listdir(os.path.join(self.root_dir, 'image')))]
-        sample_img = Image.open(self.image_paths[0])
-        W = sample_img.width
-        H = sample_img.height
-        self.focal = camera_intrinsics[0][0, 0] * self.img_wh[0] / W
-
-        poses = np.concatenate(camera_extrinsics).reshape((n_images, 4, 4))[:, :3] # (N_images, 3, 4) cam2world matrices
-        
-        # # read bounds 让visibility全部为1！
-        # self.bounds = np.zeros((len(poses), 2)) # (N_images, 2)
-        # meshes = []
-        # if os.path.exists(os.path.join(self.root_dir, 'textured_mesh.ply')):
-        #     meshes.append(open3d.io.read_triangle_mesh(os.path.join(self.root_dir, 'textured_mesh.ply'), True))
-        # elif os.path.exists(os.path.join(self.root_dir, 'textured_mesh')):
-        #     for file in os.listdir(os.path.join(self.root_dir, 'textured_mesh')):
-        #         if file.endswith('.obj'):
-        #             meshes.append(open3d.io.read_triangle_mesh(os.path.join(self.root_dir, 'textured_mesh', file), True))
-        # pts3d = []
-        # for mesh in meshes:
-        #     pts3d.append(np.asarray(mesh.vertices, dtype=np.float32))
-        # pts3d = np.concatenate(pts3d, axis=0)
-        # pts_world = pts3d.reshape((1, 3, pts3d.shape[0])) # (1, 3, N_points)
-        # visibilities = np.ones((len(poses), len(pts3d))) # (N_images, N_points)
-        # # calculate each point's depth w.r.t. each camera
-        # # it's the dot product of "points - camera center" and "camera frontal axis"
-        # depths = ((pts_world-poses[..., 3:4])*poses[..., 2:3]).sum(1) # (N_images, N_points)
-        # for i in range(len(poses)):
-        #     visibility_i = visibilities[i]
-        #     zs = depths[i][visibility_i==1]
-        #     self.bounds[i] = [np.percentile(zs, 0.1), np.percentile(zs, 99.9)]
-        # # permute the matrices to increasing order
-        # poses = poses[perm]
-        # self.bounds = self.bounds[perm]
-
-        # read bounds
-        self.bounds = np.zeros((len(poses), 2))  # (N_images, 2)
-        pts3d = read_points3d_binary(os.path.join(self.root_dir, '../sparse/0/points3D.bin'))
-        pts_world = np.zeros((1, 3, len(pts3d)))  # (1, 3, N_points)
-        visibilities = np.zeros((len(poses), len(pts3d)))  # (N_images, N_points)
-        for i, k in enumerate(pts3d):
-            pts_world[0, :, i] = pts3d[k].xyz
-            for j in pts3d[k].image_ids:
-                visibilities[j - 1, i] = 1
-        # calculate each point's depth w.r.t. each camera
-        # it's the dot product of "points - camera center" and "camera frontal axis"
-        depths = ((pts_world - poses[..., 3:4]) * poses[..., 2:3]).sum(1)  # (N_images, N_points)
-        for i in range(len(poses)):
-            visibility_i = visibilities[i]
-            zs = depths[i][visibility_i == 1]
-            self.bounds[i] = [np.percentile(zs, 0.1), np.percentile(zs, 99.9)]
-        # permute the matrices to increasing order
-        poses = poses[perm]
-        self.bounds = self.bounds[perm]
-        
-        # COLMAP poses has rotation in form "right down front", change to "right up back"
-        # See https://github.com/bmild/nerf/issues/34
-        poses = np.concatenate([poses[..., 0:1], -poses[..., 1:3], poses[..., 3:4]], -1)
-        self.poses, _ = center_poses(poses)
-        print(self.poses.shape)
-        print(self.poses[0])
-        distances_from_center = np.linalg.norm(self.poses[..., 3], axis=1)
-        val_idx = np.argmin(distances_from_center) # choose val image as the closest to
-                                                   # center image
-
-        # Step 3: correct scale so that the nearest depth is at a little more than 1.0
-        # See https://github.com/bmild/nerf/issues/34
-        near_original = self.bounds.min()
-        scale_factor = near_original*0.75 # 0.75 is the default parameter
-                                          # the nearest depth is at 1/0.75=1.33
-        self.bounds /= scale_factor
-        self.poses[..., 3] /= scale_factor
-
-        # ray directions for all pixels, same for all images (same H, W, focal)
-        self.directions = \
-            get_ray_directions(self.img_wh[1], self.img_wh[0], self.focal) # (H, W, 3)
-            
-        if self.split == 'train': # create buffer of all rays and rgb data
-                                  # use first N_images-1 to train, the LAST is val
-            self.all_rays = []
-            self.all_rgbs = []
-            for i, image_path in enumerate(self.image_paths):
-                if i == val_idx: # exclude the val image
-                    continue
-                c2w = torch.FloatTensor(self.poses[i])
-
-                img = Image.open(image_path).convert('RGB')
-                # assert img.size[1]*self.img_wh[0] == img.size[0]*self.img_wh[1], \
-                #     f'''{image_path} has different aspect ratio than img_wh, 
-                #         please check your data!'''
-                img = img.resize(self.img_wh, Image.LANCZOS)
-                img = self.transform(img) # (3, h, w)
-                img = img.view(3, -1).permute(1, 0) # (h*w, 3) RGB
-                self.all_rgbs += [img]
-                
-                rays_o, rays_d = get_rays(self.directions, c2w) # both (h*w, 3)
-                if not self.spheric_poses:
-                    near, far = 0, 1
-                    rays_o, rays_d = get_ndc_rays(self.img_wh[1], self.img_wh[0],
-                                                  self.focal, 1.0, rays_o, rays_d)
-                                     # near plane is always at 1.0
-                                     # near and far in NDC are always 0 and 1
-                                     # See https://github.com/bmild/nerf/issues/34
-                else:
-                    near = self.bounds.min()
-                    far = min(8 * near, self.bounds.max()) # focus on central object only
-
-                self.all_rays += [torch.cat([rays_o, rays_d, 
-                                             near*torch.ones_like(rays_o[:, :1]),
-                                             far*torch.ones_like(rays_o[:, :1])],
-                                             1)] # (h*w, 8)
-                                 
-            self.all_rays = torch.cat(self.all_rays, 0) # ((N_images-1)*h*w, 8)
-            self.all_rgbs = torch.cat(self.all_rgbs, 0) # ((N_images-1)*h*w, 3)
-        
-        elif self.split == 'val':
-            print('val image is', self.image_paths[val_idx])
-            self.val_idx = val_idx
-
-        else: # for testing, create a parametric rendering path
-            if self.split.endswith('train'): # test on training set
-                self.poses_test = self.poses
-            elif not self.spheric_poses:
-                focus_depth = 3.5 # hardcoded, this is numerically close to the formula
-                                  # given in the original repo. Mathematically if near=1
-                                  # and far=infinity, then this number will converge to 4
-                radii = np.percentile(np.abs(self.poses[..., 3]), 90, axis=0)
-                self.poses_test = create_spiral_poses(radii, focus_depth)
-            else:
-                radius = 1.1 * self.bounds.min()
-                self.poses_test = create_spheric_poses(radius)
-
     def define_transforms(self):
         self.transform = T.ToTensor()
 
@@ -614,7 +481,7 @@ class LLFFDataset(Dataset):
         return len(self.poses_test)
 
     def __getitem__(self, idx):
-        if self.split == 'train': # use data in the buffers
+        if self.split == 'train':  # use data in the buffers
             sample = {'rays': self.all_rays[idx],
                       'rgbs': self.all_rgbs[idx]}
 
@@ -635,10 +502,10 @@ class LLFFDataset(Dataset):
                 near = self.bounds.min()
                 far = min(8 * near, self.bounds.max())
 
-            rays = torch.cat([rays_o, rays_d, 
-                              near*torch.ones_like(rays_o[:, :1]),
-                              far*torch.ones_like(rays_o[:, :1])],
-                              1) # (h*w, 8)
+            rays = torch.cat([rays_o, rays_d,
+                              near * torch.ones_like(rays_o[:, :1]),
+                              far * torch.ones_like(rays_o[:, :1])],
+                             1)  # (h*w, 8)
 
             sample = {'rays': rays,
                       'c2w': c2w}
@@ -648,8 +515,8 @@ class LLFFDataset(Dataset):
                     idx = self.val_idx
                 img = Image.open(self.image_paths[idx]).convert('RGB')
                 img = img.resize(self.img_wh, Image.LANCZOS)
-                img = self.transform(img) # (3, h, w)
-                img = img.view(3, -1).permute(1, 0) # (h*w, 3)
+                img = self.transform(img)  # (3, h, w)
+                img = img.view(3, -1).permute(1, 0)  # (h*w, 3)
                 sample['rgbs'] = img
 
         return sample
