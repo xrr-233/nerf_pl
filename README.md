@@ -118,6 +118,30 @@ Download the pretrained models and training logs in [release](https://github.com
 The speed is measured on 1 RTX2080Ti. Detailed profile can be found in [release](https://github.com/kwea123/nerf_pl/releases).
 Training memory is largely reduced, since the original repo loads the whole data to GPU at the beginning, while we only pass batches to GPU every step.
 
+## NeuS, DTU & BlendedMVS
+<details>
+For standard NeuS input, because NeRF requires bounds derived from image_ids from COLMAP sparse reconstruction, with known camera poses, we should regenerate this attribute.
+
+The feature extraction and matching can be conducted in GUI.
+
+```
+colmap feature_extractor \
+    --database_path $PROJECT_PATH/database.db \
+    --image_path $PROJECT_PATH/images
+colmap exhaustive_matcher \ # or alternatively any other matcher
+    --database_path $PROJECT_PATH/database.db
+```
+
+But the triangulation step can only be executed by command line with source-built COLMAP.
+
+```
+colmap point_triangulator \
+    --database_path $PROJECT_PATH/database.db \
+    --image_path $PROJECT_PATH/images
+    --input_path path/to/manually/created/sparse/model \
+    --output_path path/to/triangulated/sparse/model
+```
+
 # :mag_right: Testing
 
 See [test.ipynb](test.ipynb) for a simple view synthesis and depth prediction on 1 image.

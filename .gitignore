@@ -136,6 +136,5 @@ dmypy.json
 .pyre/
 
 .idea
-*.zip
-nerf_synthetic
-nerf_llff_data
+neus2llff_preprocessed
+BlendedMVS_preprocessed
